@@ -22,8 +22,9 @@ $ docker-compose up -d
 
 By default this will create:
 
-* 1 One container which is a signer node with bootstrapped
-* 1 One container which is another signer (which connects to the bootstrapped container on launch)
+* 1 container which is a signer node with bootstrapped
+* 1 container which is another signer node (which connects to the bootstrapped container on launch)
+* 1 container which is a normal node (which connects to the bootstrapped container on launch)
 * 1 Netstats container (with a Web UI to view activity in the cluster)
 * 1 Explorer container
 

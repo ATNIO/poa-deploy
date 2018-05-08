@@ -8,7 +8,7 @@ services:
     links:
       - netstats
     entrypoint: /root/start.sh
-    command: '--datadir=~/.ethereum/devchain --syncmode "full" --networkid=161616 --port 30321 --nodekeyhex "091bd6067cb4612df85d9c1ff85cc47f259ced4d4cd99816b14f35650f59c322" --rpc --rpcaddr="0.0.0.0" --rpcapi "db,personal,eth,net,web3,txpool,miner,admin" --rpccorsdomain="*" -unlock "1c203dca73df132398c511451be9b0f9a28f4b59" --password /root/files/password/password.txt --mine'
+    command: '--datadir=~/.ethereum/devchain --syncmode "full" --networkid=161616 --port 30321 --nodekeyhex "091bd6067cb4612df85d9c1ff85cc47f259ced4d4cd99816b14f35650f59c322" --rpc --rpcaddr="0.0.0.0" --rpcapi "db,personal,eth,net,web3,txpool,miner,admin,clique" --rpccorsdomain="*" -unlock "1c203dca73df132398c511451be9b0f9a28f4b59" --password /root/files/password/password.txt --mine'
     volumes:
       - ./files/accounts/signer01/keystore:/root/.ethereum/devchain/keystore:rw
       - ./files/accounts/signer01/password:/root/files/password:ro
