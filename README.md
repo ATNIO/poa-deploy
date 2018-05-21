@@ -67,6 +67,7 @@ if not, just copy any existing geth key to the `keystore` folder, and add it's n
 once the key is provided you can just create the cluster with those 2 commands:
 
 ```bash
+cd k8s
 ./kuberneteth # this will create a file called 'deployment.yaml'
 kubectl apply -f deployment.yaml # this will deploy the cluster to kubernetes
 ```
