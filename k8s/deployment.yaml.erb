@@ -243,7 +243,7 @@ spec:
     spec:
       containers:
       - name: geth-boot-node-setup-container
-        image: asia.gcr.io/consortiumchain/geth-node:bootv2
+        image: mmeister/geth-node:bootv2
         imagePullPolicy: IfNotPresent
         command: [ "sh" ]
         args:
@@ -270,7 +270,7 @@ metadata:
 spec:
   containers:
   - name: geth-boot-node-container
-    image: asia.gcr.io/consortiumchain/geth-node:bootv2
+    image: mmeister/geth-node:bootv2
     imagePullPolicy: IfNotPresent
     ports:
       - containerPort: <%= @config["bootnode"]["geth"]["NodeP2P_ListenAddr"] %>
@@ -486,7 +486,7 @@ spec:
     spec:
       initContainers:
       - name: <%= @config["monitor"]["name"] %>-init-container
-        image: asia.gcr.io/consortiumchain/eth-net-intelligence-api
+        image: mmeister/eth-net-intelligence-api
         imagePullPolicy: IfNotPresent
         command: [ "sh" ]
         args:
@@ -507,7 +507,7 @@ spec:
           mountPath: /ethmonitor
       containers:
       - name: eth-netstats-container
-        image: asia.gcr.io/consortiumchain/eth-netstats
+        image: mmeister/eth-netstats
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 3001
@@ -517,7 +517,7 @@ spec:
         - name: PORT
           value: "3001"
       - name: eth-net-intelligence-api-container
-        image: asia.gcr.io/consortiumchain/eth-net-intelligence-api
+        image: mmeister/eth-net-intelligence-api
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: monitor-config-persistent-storage
