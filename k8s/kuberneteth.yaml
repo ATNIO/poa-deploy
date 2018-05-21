@@ -1,0 +1,127 @@
+# configuration for the bootnode that makes the cluster nodes aware of each other - for that make sure bootnode has same genesis block
+bootnode:
+  nodekeyhex: 091bd6067cb4612df85d9c1ff85cc47f259ced4d4cd99816b14f35650f59c322
+  # verbosity of the bootnode [1..9]
+  verbosity: 9
+  # assign an rpc/ipc port
+  geth:
+    NodeP2P_ListenAddr: 30301
+    NodeP2P_DiscoveryAddr: 30303
+    Node_DataDir: /etc/testnet/bootnode
+# here you can add as many nodes as you like, name and configure them
+nodes:
+- miner:
+    # this config values will end up in the k8s manifest directly
+    k8s:
+      # static external IP
+      External_RPC_IP: 35.201.214.235 
+      # open a port on each node (optional)
+      nodePort_rpc: 30001
+      nodePort_ipc: 30002
+      replicas: 1
+    # this config values will alter the geth config toml file which will end up as a ConfigMap in the k8s manifest
+    geth:
+      # address where the mining rewards will go to (optional)
+      Eth_Etherbase: "0x1c203dca73df132398c511451be9b0f9a28f4b59"
+      Eth_Password: "123"
+      # threads (optional)
+      Eth_MinerThreads: 1
+      Node_UserIdent: miner01
+      Node_DataDir: /etc/testnet/miner01
+      Node_HTTPPort: 8545
+      Node_WSPort: 8546
+      NodeP2P_DiscoveryAddr: 30303
+      # experimental built in dashboard (optional) only works on > v1.7.3
+      Dashboard_Port: 8080
+      Dashboard_Refresh: 3000000000
+- miner02:
+    # this config values will end up in the k8s manifest directly
+    k8s:
+      # static external IP
+      External_RPC_IP: 35.234.10.143 
+      # open a port on each node (optional)
+      nodePort_rpc: 30003
+      nodePort_ipc: 30004
+      replicas: 1
+    # this config values will alter the geth config toml file which will end up as a ConfigMap in the k8s manifest
+    geth:
+      # address where the mining rewards will go to (optional)
+      Eth_Etherbase: "0x08be2e527bc17471566cf71080b537e051916139"
+      Eth_Password: "123"
+      # threads (optional)
+      Eth_MinerThreads: 1
+      Node_UserIdent: miner02
+      Node_DataDir: /etc/testnet/miner02
+      Node_HTTPPort: 8545
+      Node_WSPort: 8546
+      NodeP2P_DiscoveryAddr: 30303
+      # experimental built in dashboard (optional) only works on > v1.7.3
+      Dashboard_Port: 8080
+      Dashboard_Refresh: 3000000000
+- member:
+    # this config values will end up in the k8s manifest directly
+    k8s:
+      # static external IP
+      External_RPC_IP: 35.229.175.223 
+      # open a port on each node (optional)
+      nodePort_rpc: 30005
+      nodePort_ipc: 30006
+      replicas: 1
+    # this config values will alter the geth config toml file which will end up as a ConfigMap in the k8s manifest
+    geth:
+      # address where the mining rewards will go to (optional)
+      Eth_Etherbase: "0x61d51f66412c8181f0905602baf6ba51f75299ad"
+      # Eth_Password: "123"
+      # threads (optional)
+      # Eth_MinerThreads: 1
+      Node_UserIdent: member01
+      Node_DataDir: /etc/testnet/member01
+      Node_HTTPPort: 8545
+      Node_WSPort: 8546
+      NodeP2P_DiscoveryAddr: 30303
+      # experimental built in dashboard (optional) only works on > v1.7.3
+      Dashboard_Port: 8080
+      Dashboard_Refresh: 3000000000
+# keep adding nodes
+# - member:
+# ...
+monitor:
+  name: monitor
+  # verbosity can be within [0..3]
+  verbosity: 0
+  k8s:
+    nodePort: 30007
+# create a private key and add it to the keystore folder
+# ... or just use the example one for testing
+    configMap:
+      name: genesis-config
+      items:
+      - key: Genesis-geth.json
+        path: Genesis-geth.json
+keystore:
+  # true: upload secret first via 'kubectl create secret generic geth-key-<keyvalue> --from-file /path/to/keyfile'
+  # false: use the key in keystore folder
+  secret: false
+  items:
+    "0x61d51f66412c8181f0905602baf6ba51f75299ad": UTC--2018-05-07T09-02-52.143811528Z--61d51f66412c8181f0905602baf6ba51f75299ad
+    "0x08be2e527bc17471566cf71080b537e051916139": UTC--2018-05-07T09-03-45.478309757Z--08be2e527bc17471566cf71080b537e051916139
+    "0x1c203dca73df132398c511451be9b0f9a28f4b59": UTC--2018-05-07T09-04-14.885751752Z--1c203dca73df132398c511451be9b0f9a28f4b59
+# generic geth related options
+geth:
+  # you can find suitable tags in https://hub.docker.com/r/ethereum/client-go/tags/
+  # due to some config file changes in geth it needs to be > 1.8.0
+  version: stable
+  network:
+    # network id (1: mainnet, 3: ropsten, 4: rinkeby ... )
+    id: 161616
+    # public (true|false) is it a public network?
+    public: false
+    # cross_net (ture|false) is it cross different network (cloud)
+    cross_net: true
+  # hex value of initial difficulty defined in the genesis block
+  difficulty: "0x1"
+  # as it is a private cluster and do not need cross different network, provide a CIDR of the cluster's network
+  # to prevent other nodes connecting from the outside
+  NodeP2P_Netrestrict: "10.36.0.0/14"
+  # general verbosity of geth [1..5]
+  verbosity: 3
