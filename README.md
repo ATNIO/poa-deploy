@@ -1,10 +1,8 @@
-# chinb-deploy
-Deploy chinb-chain rapidly using Docker. 
+# POA deploy
+Deploy POA blockchain rapidly using Docker. 
 
 
-# Getting started
-
-## Installing
+### Use docker-compose
 
 #### Prerequisites
 
@@ -12,7 +10,7 @@ Docker Toolbox installed.
 > To download and install Docker Toolbox for your environment please
 follow [the Docker Toolbox instructions](https://www.docker.com/products/docker-toolbox). 
 
-### docker-compose
+#### Getting Start
 
 Just run the following:
 
@@ -23,8 +21,8 @@ $ docker-compose up -d
 By default this will create:
 
 * 1 container which is a signer node with bootstrapped
-* 1 container which is another signer node (which connects to the bootstrapped container on launch)
-* 1 container which is a normal node (which connects to the bootstrapped container on launch)
+* 1 container which is another signer node
+* 1 container which is a normal node
 * 1 Netstats container (with a Web UI to view activity in the cluster)
 * 1 Explorer container
 
@@ -46,7 +44,13 @@ As part of the bootstrapping process we bootstrap 3 Ethereum accounts, two are s
 
 See `files/genesis.json`.
 
-### kubernetes for Google Cloud Platform
+## User kubernetes
+
+```bash
+cd k8s
+```
+
+### work flow
 
 if you have set `keystore.secret` to `true` in [kuberneteth.yaml](./kuberneteth.yaml) create an account and upload the key
 
