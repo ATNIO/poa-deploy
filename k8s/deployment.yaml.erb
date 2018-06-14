@@ -101,6 +101,28 @@ data:
 <% end -%>
     ]
 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: explorer-config
+  namespace: default
+  labels:
+    name: explorer-config
+    app: kuberneteth
+data:
+  config.json: |-
+    {
+        "nodeAddr":     "<%= @config["explorer"]["explorerNode"] %>-rpchost",
+        "gethPort":     <%= @config["explorer"]["explorerHTTPPort"] %>,
+        "startBlock":   0,
+        "endBlock":     "latest",
+        "quiet":        true,
+        "syncAll":      true,
+        "patch":        true,
+        "patchBlocks":  100
+    }
+
 <%- unless @config["geth"]["network"]["public"] -%>
 ---
 apiVersion: v1
@@ -243,7 +265,7 @@ spec:
     spec:
       containers:
       - name: geth-boot-node-setup-container
-        image: mmeister/geth-node:bootv2
+        image: ovsoil/geth-node:bootv2
         imagePullPolicy: IfNotPresent
         command: [ "sh" ]
         args:
@@ -270,7 +292,7 @@ metadata:
 spec:
   containers:
   - name: geth-boot-node-container
-    image: mmeister/geth-node:bootv2
+    image: ovsoil/geth-node:bootv2
     imagePullPolicy: IfNotPresent
     ports:
       - containerPort: <%= @config["bootnode"]["geth"]["NodeP2P_ListenAddr"] %>
@@ -457,15 +479,15 @@ spec:
   selector:
     app: kuberneteth
     tier: frontend
-<%- if @config["monitor"]["nodePort"] -%>
+<%- if @config["monitor"]["k8s"]["nodePort"] -%>
   type: NodePort
 <% end -%>
   ports:
     - name: <%= @config["monitor"]["name"] %>-port
       protocol: TCP
       port: 3001
-<%- if @config["monitor"]["nodePort"] -%>
-      nodePort: <%= @config["monitor"]["nodePort"] %>
+<%- if @config["monitor"]["k8s"]["nodePort"] -%>
+      nodePort: <%= @config["monitor"]["k8s"]["nodePort"] %>
 <% end -%>
 ---
 apiVersion: extensions/v1beta1
@@ -486,7 +508,7 @@ spec:
     spec:
       initContainers:
       - name: <%= @config["monitor"]["name"] %>-init-container
-        image: mmeister/eth-net-intelligence-api
+        image: ovsoil/eth-net-intelligence-api
         imagePullPolicy: IfNotPresent
         command: [ "sh" ]
         args:
@@ -507,7 +529,7 @@ spec:
           mountPath: /ethmonitor
       containers:
       - name: eth-netstats-container
-        image: mmeister/eth-netstats
+        image: ovsoil/eth-netstats
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 3001
@@ -517,7 +539,7 @@ spec:
         - name: PORT
           value: "3001"
       - name: eth-net-intelligence-api-container
-        image: mmeister/eth-net-intelligence-api
+        image: ovsoil/eth-net-intelligence-api
         imagePullPolicy: IfNotPresent
         volumeMounts:
         - name: monitor-config-persistent-storage
@@ -548,3 +570,133 @@ spec:
     requests:
       storage: 10Gi
 status: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb-svc
+  labels:
+    name: mongodb-svc
+    app: kuberneteth
+    tier: backend
+spec:
+  ports:
+    - port: 27017
+      targetPort: 27017
+  selector:
+    app: kuberneteth
+    tier: backend
+    name: mongodb-deployment
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: mongodb
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: mongodb-deployment
+      labels:
+        app: kuberneteth
+        tier: backend
+        name: mongodb-deployment
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: mongodb
+          containerPort: 27017
+        volumeMounts:
+        - name: mongodb-persistent-storage
+          mountPath: /data/db
+      volumes:
+      - name: mongodb-persistent-storage
+        persistentVolumeClaim:
+          claimName: volume-monnodb 
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  labels:
+    name: volume-monnodb
+  name: volume-monnodb
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: explorer-svc
+  labels:
+    app: kuberneteth
+    tier: frontend
+    name: explorer-svc
+spec:
+  selector:
+    app: kuberneteth
+    tier: frontend
+    name: explorer-deployment
+<%- if @config["explorer"]["k8s"]["nodePort"] -%>
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+<% end -%>
+  ports:
+    - name: <%= @config["explorer"]["name"] %>-port
+      protocol: TCP
+      port: 3000
+<%- if @config["explorer"]["k8s"]["nodePort"] -%>
+      nodePort: <%= @config["explorer"]["k8s"]["nodePort"] %>
+<% end -%>
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: explorer
+spec:
+  strategy:
+    type: Recreate
+  replicas: 1
+  template:
+    metadata:
+      name: explorer-deployment
+      labels:
+        app: kuberneteth
+        tier: frontend
+        name: explorer-deployment
+    spec:
+      containers:
+      - name: explorer
+        image: ovsoil/explorer:latest
+        imagePullPolicy: IfNotPresent
+        command: [ "sh" ]
+        args:
+        - "-cx"
+        - "cp -f /explorer-configmap/config.json /explorer/config.json;
+           sed -i \"s/<%= @config["explorer"]["explorerNode"] %>-rpchost/$<%= @config["explorer"]["explorerNode"].upcase %>_SVC_SERVICE_HOST/g\" /explorer/config.json;
+           npm start app.js;
+           exit 0;"
+        ports:
+        - containerPort: 3000
+        env:
+        - name: MONGO_URI
+          value: 'mongodb://mongodb-svc/blockDB'
+        volumeMounts:
+        - name: explorer-configmap-volume
+          mountPath: /explorer-configmap/config.json
+          subPath: config.json
+      volumes:
+      - name: explorer-configmap-volume
+        configMap:
+          name: explorer-config
+          items:
+          - key: config.json
+            path: config.json

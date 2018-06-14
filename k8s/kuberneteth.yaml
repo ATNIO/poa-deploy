@@ -10,7 +10,7 @@ bootnode:
     Node_DataDir: /etc/testnet/bootnode
 # here you can add as many nodes as you like, name and configure them
 nodes:
-- miner:
+- miner01:
     # this config values will end up in the k8s manifest directly
     k8s:
       # static external IP
@@ -58,7 +58,7 @@ nodes:
       # experimental built in dashboard (optional) only works on > v1.7.3
       Dashboard_Port: 8080
       Dashboard_Refresh: 3000000000
-- member:
+- member01:
     # this config values will end up in the k8s manifest directly
     k8s:
       # static external IP
@@ -90,7 +90,9 @@ monitor:
   # verbosity can be within [0..3]
   verbosity: 0
   k8s:
-    nodePort: 30007
+    nodePort: 30100
+    externalIP: 35.229.175.220 
+    externalPort: 3001
 # create a private key and add it to the keystore folder
 # ... or just use the example one for testing
     configMap:
@@ -98,6 +100,19 @@ monitor:
       items:
       - key: Genesis-geth.json
         path: Genesis-geth.json
+explorer:
+  name: explorer
+  explorerNode: member01 
+  explorerHTTPPort: 8545
+  k8s:
+    nodePort: 30101
+    externalIP: 35.229.175.221 
+    externalPort: 3000
+    configMap:
+      name: explorer-config
+      items:
+      - kye: config.json
+        path: config.json
 keystore:
   # true: upload secret first via 'kubectl create secret generic geth-key-<keyvalue> --from-file /path/to/keyfile'
   # false: use the key in keystore folder
